@@ -9,8 +9,8 @@ import {
 } from "@solana/wallet-adapter-base";
 import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Web3Auth } from "@web3auth/modal";
-import { IProvider, CHAIN_NAMESPACES, WEB3AUTH_NETWORK } from "@web3auth/base";
-import { SolanaPrivateKeyProvider } from "@web3auth/solana-provider";
+import { IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { SolanaWallet } from "@web3auth/solana-provider";
 
 export const Web3AuthWalletName = "Web3Auth" as WalletName<"Web3Auth">;
 
@@ -25,6 +25,7 @@ export class Web3AuthWalletAdapter extends BaseMessageSignerWalletAdapter {
   private _publicKey: PublicKey | null = null;
   private _web3auth: Web3Auth | null = null;
   private _provider: IProvider | null = null;
+  private _solanaWallet: SolanaWallet | null = null;
   private _readyState: WalletReadyState = WalletReadyState.NotDetected;
   private _clientId: string;
 
@@ -64,35 +65,17 @@ export class Web3AuthWalletAdapter extends BaseMessageSignerWalletAdapter {
 
       this._connecting = true;
 
-      // Initialize Web3Auth if not already done
+      // Initialize Web3Auth if not already done (v10 simplified config)
       if (!this._web3auth) {
-        const chainConfig = {
-          chainNamespace: CHAIN_NAMESPACES.SOLANA,
-          chainId: "0x1",
-          rpcTarget:
-            process.env.NEXT_PUBLIC_SOLANA_RPC_URL ||
-            "https://api.mainnet-beta.solana.com",
-          displayName: "Solana Mainnet",
-          blockExplorerUrl: "https://explorer.solana.com",
-          ticker: "SOL",
-          tickerName: "Solana",
-        };
-
-        const privateKeyProvider = new SolanaPrivateKeyProvider({
-          config: { chainConfig },
-        });
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this._web3auth = new Web3Auth({
           clientId: this._clientId,
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-          privateKeyProvider: privateKeyProvider as any,
         });
 
         await this._web3auth.init();
       }
 
-      // Connect
+      // Connect - this opens the Web3Auth modal
       const provider = await this._web3auth.connect();
       if (!provider) {
         throw new WalletConnectionError("Failed to connect");
@@ -100,10 +83,9 @@ export class Web3AuthWalletAdapter extends BaseMessageSignerWalletAdapter {
 
       this._provider = provider;
 
-      // Get accounts
-      const accounts = (await provider.request({
-        method: "getAccounts",
-      })) as string[] | null;
+      // Use SolanaWallet wrapper for v10
+      this._solanaWallet = new SolanaWallet(provider);
+      const accounts = await this._solanaWallet.requestAccounts();
 
       if (!accounts || accounts.length === 0) {
         throw new WalletConnectionError("No accounts found");
@@ -143,39 +125,13 @@ export class Web3AuthWalletAdapter extends BaseMessageSignerWalletAdapter {
     transaction: T
   ): Promise<T> {
     try {
-      if (!this._provider || !this._publicKey) {
+      if (!this._solanaWallet || !this._publicKey) {
         throw new WalletNotConnectedError();
       }
 
-      // Serialize the transaction message
-      let message: Uint8Array;
-      if (transaction instanceof VersionedTransaction) {
-        message = transaction.message.serialize();
-      } else {
-        message = transaction.serializeMessage();
-      }
-
-      // Sign with Web3Auth provider
-      const signedMessage = (await this._provider.request({
-        method: "signTransaction",
-        params: {
-          message: Buffer.from(message).toString("base64"),
-        },
-      })) as { signature: Uint8Array } | null;
-
-      if (!signedMessage?.signature) {
-        throw new WalletSignTransactionError("Failed to sign transaction");
-      }
-
-      // Add signature to transaction
-      const signature = Buffer.from(signedMessage.signature);
-      if (transaction instanceof VersionedTransaction) {
-        transaction.addSignature(this._publicKey, signature);
-      } else {
-        transaction.addSignature(this._publicKey, signature);
-      }
-
-      return transaction;
+      // Use SolanaWallet to sign
+      const signedTx = await this._solanaWallet.signTransaction(transaction);
+      return signedTx as T;
     } catch (error: unknown) {
       const walletError = error instanceof WalletSignTransactionError
         ? error
@@ -188,27 +144,30 @@ export class Web3AuthWalletAdapter extends BaseMessageSignerWalletAdapter {
   async signAllTransactions<T extends Transaction | VersionedTransaction>(
     transactions: T[]
   ): Promise<T[]> {
-    return Promise.all(transactions.map((tx) => this.signTransaction(tx)));
+    try {
+      if (!this._solanaWallet || !this._publicKey) {
+        throw new WalletNotConnectedError();
+      }
+
+      const signedTxs = await this._solanaWallet.signAllTransactions(transactions);
+      return signedTxs as T[];
+    } catch (error: unknown) {
+      const walletError = error instanceof WalletSignTransactionError
+        ? error
+        : new WalletSignTransactionError((error as Error).message);
+      this.emit("error", walletError);
+      throw walletError;
+    }
   }
 
   async signMessage(message: Uint8Array): Promise<Uint8Array> {
     try {
-      if (!this._provider || !this._publicKey) {
+      if (!this._solanaWallet || !this._publicKey) {
         throw new WalletNotConnectedError();
       }
 
-      const signedMessage = (await this._provider.request({
-        method: "signMessage",
-        params: {
-          message: Buffer.from(message).toString("base64"),
-        },
-      })) as { signature: Uint8Array } | null;
-
-      if (!signedMessage?.signature) {
-        throw new WalletSignTransactionError("Failed to sign message");
-      }
-
-      return new Uint8Array(signedMessage.signature);
+      const signedMessage = await this._solanaWallet.signMessage(message);
+      return signedMessage;
     } catch (error: unknown) {
       const walletError = error instanceof WalletSignTransactionError
         ? error
