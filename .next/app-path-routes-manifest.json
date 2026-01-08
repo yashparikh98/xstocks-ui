@@ -1,9 +1,0 @@
-{
-  "/_global-error/page": "/_global-error",
-  "/_not-found/page": "/_not-found",
-  "/ai-advisor/page": "/ai-advisor",
-  "/api/prices/route": "/api/prices",
-  "/invest/page": "/invest",
-  "/page": "/",
-  "/trade/page": "/trade"
-}
