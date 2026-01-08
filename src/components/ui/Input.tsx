@@ -1,0 +1,29 @@
+"use client";
+
+import { cn } from "@/lib/utils/cn";
+import { forwardRef } from "react";
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  error?: string;
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, error, ...props }, ref) => {
+    return (
+      <div className="w-full">
+        <input
+          ref={ref}
+          className={cn(
+            "w-full px-4 py-3 text-lg bg-surface-50 border border-surface-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors",
+            error && "border-red-500 focus:ring-red-500",
+            className
+          )}
+          {...props}
+        />
+        {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+      </div>
+    );
+  }
+);
+
+Input.displayName = "Input";

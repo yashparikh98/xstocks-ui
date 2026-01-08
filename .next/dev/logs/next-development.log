@@ -1,0 +1,16 @@
+[00:00:00.873] Server  LOG     ✓ Ready in 705ms
+[00:00:11.869] Server  LOG     ○ Compiling / ...
+[00:00:23.875] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:28.721] Server  LOG     ✓ Finished writing to filesystem cache in 11.3s
+[00:00:33.829] Server  LOG     ○ Compiling /api/prices ...
+[00:01:16.524] Server  LOG     ✓ Finished filesystem cache database compaction in 48s
+[00:01:18.131] Server  LOG     ✓ Finished writing to filesystem cache in 35.8s
+[00:03:09.989] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:05:13.329] Server  LOG     ✓ Compiled in 983ms
+[00:05:35.927] Server  LOG     ✓ Finished filesystem cache database compaction in 15.3s
+[00:05:41.448] Server  LOG     ✓ Compiled in 175ms
+[00:06:04.519] Server  LOG     ✓ Compiled in 69ms
+[00:06:48.896] Server  LOG     ✓ Compiled in 78ms
+[00:07:37.704] Server  LOG     ✓ Compiled in 47ms
+[00:07:47.585] Server  LOG     ✓ Compiled in 43ms
+[00:07:57.994] Server  LOG     ✓ Compiled in 46ms
