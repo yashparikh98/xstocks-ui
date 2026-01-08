@@ -2,14 +2,11 @@
 
 import dynamic from "next/dynamic";
 
-const WalletMultiButton = dynamic(
-  () =>
-    import("@solana/wallet-adapter-react-ui").then(
-      (mod) => mod.WalletMultiButton
-    ),
+const WalletButton = dynamic(
+  () => import("./WalletButton").then((mod) => mod.WalletButton),
   { ssr: false }
 );
 
 export function WalletButtonWrapper() {
-  return <WalletMultiButton />;
+  return <WalletButton />;
 }
