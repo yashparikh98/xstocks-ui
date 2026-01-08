@@ -14,6 +14,11 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 
 const WEB3AUTH_CLIENT_ID = process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID || "";
 
+// Debug: log to verify env var is loaded
+if (typeof window !== "undefined") {
+  console.log("Web3Auth Client ID configured:", !!WEB3AUTH_CLIENT_ID);
+}
+
 interface SolanaProviderProps {
   children: React.ReactNode;
 }
