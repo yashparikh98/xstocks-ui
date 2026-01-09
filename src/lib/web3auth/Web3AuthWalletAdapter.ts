@@ -9,8 +9,8 @@ import {
 } from "@solana/wallet-adapter-base";
 import { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { Web3Auth } from "@web3auth/modal";
-import { IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
-import { SolanaWallet } from "@web3auth/solana-provider";
+import { IProvider, WEB3AUTH_NETWORK, CHAIN_NAMESPACES } from "@web3auth/base";
+import { SolanaWallet, SolanaPrivateKeyProvider } from "@web3auth/solana-provider";
 
 export const Web3AuthWalletName = "Web3Auth" as WalletName<"Web3Auth">;
 
@@ -65,11 +65,27 @@ export class Web3AuthWalletAdapter extends BaseMessageSignerWalletAdapter {
 
       this._connecting = true;
 
-      // Initialize Web3Auth if not already done (v10 simplified config)
+      // Initialize Web3Auth if not already done
       if (!this._web3auth) {
+        const chainConfig = {
+          chainNamespace: CHAIN_NAMESPACES.SOLANA,
+          chainId: "0x1", // Solana Mainnet
+          rpcTarget: "https://api.mainnet-beta.solana.com",
+          displayName: "Solana Mainnet",
+          blockExplorerUrl: "https://explorer.solana.com",
+          ticker: "SOL",
+          tickerName: "Solana",
+        };
+
+        const privateKeyProvider = new SolanaPrivateKeyProvider({
+          config: { chainConfig },
+        });
+
         this._web3auth = new Web3Auth({
           clientId: this._clientId,
           web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          privateKeyProvider: privateKeyProvider as any,
         });
 
         await this._web3auth.init();
